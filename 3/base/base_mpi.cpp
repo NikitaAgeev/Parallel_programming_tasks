@@ -14,8 +14,12 @@ int main(int argc, char* argv[])
     size_t I;
     size_t J;
 
-    if( argc != 3)
-        printf("base [I] [J]");
+    if( argc != 3){
+        if(my_rank == 0)
+            printf("base [I] [J]");
+        MPI_Finalize();
+        return 0;
+    }
     else {
         I = atoi(argv[1]);
         J = atoi(argv[2]);
@@ -48,10 +52,13 @@ int main(int argc, char* argv[])
         }
     }
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     double end_time = MPI_Wtime();
     free(a);
 
-    printf("Ans = %lf mks\n", (end_time - start_time)*(1000000));//time/(size + 1));
+    if(my_rank == 0)
+        printf("Time: %lf mks\n", (end_time - start_time)*(1000000));//time/(size + 1));
 
 
     MPI_Finalize();
