@@ -6,6 +6,7 @@
 
 double eps;
 double real_ans = 2.72611738439407; 
+int N;
 
 double f (double x){
     return sin(1/x);
@@ -35,7 +36,7 @@ void* func(void* argv){
     double max = (abs(dd_f(start)) > abs(dd_f(stop)))? abs(dd_f(start)): abs(dd_f(stop)); 
     max_dd_f = (max > max_dd_f)? max: max_dd_f;
 
-    double h = (12*eps)/(max_dd_f*(stop - start));
+    double h = (12*eps)/(N*max_dd_f*(stop - start));
     h = std::sqrt(h);
     size_t N = (stop - start)/h + 1;
     h = (stop - start)/N;
@@ -52,7 +53,7 @@ void* func(void* argv){
     pthread_mutex_unlock(&x_l);
     #endif
 
-    //printf("%lf:%lf - %lf == %lf (max: %lf) (eps: %lu)\n", start, stop, h, *res, max_dd_f, N);
+    printf("%lf:%lf - %lf == %lf (max: %lf) (eps: %lu)\n", start, stop, h, *res, max_dd_f, N);
 
     pthread_exit(res);
 }
@@ -69,7 +70,7 @@ int main(int argc, char* argv[]){
     double start = 0.01;
     double stop = 10;
     
-    int N = atoi(argv[1]);
+    N = atoi(argv[1]);
     eps = atof(argv[2]);
     pthread_t arr [N];
     double arg_arr [N][2];
@@ -93,7 +94,7 @@ int main(int argc, char* argv[]){
     double end_time = clock();
 
     printf("ans %lf\n", ans);
-    printf("err: %lf (%lf%%)\n", abs(real_ans -ans), abs(real_ans - ans)/real_ans);
+    printf("err: %lf (%lf%%)\n", abs(real_ans -ans), 100*abs(real_ans - ans)/real_ans);
     printf("time: %lf ms\n", end_time - start_time);
     return 0;
 }
