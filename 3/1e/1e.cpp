@@ -33,53 +33,16 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    size_t calk_per_tread = (commsize >= 8)? 1 : (commsize == 4)? 2 : (commsize == 2)? 4 : 8;
-    size_t calk_per_group = (commsize >= 8)? commsize/8 : 1;
+    size_t tread_per_group = (commsize >= 8)? commsize/8: 1;
+    size_t group_per_tread = (commsize >= 8)? 1: (commsize == 4)? 2: (commsize == 2)? 4: 8;
 
-    size_t start_J = (J*my_rank)/calk_per_group;
-    size_t end_J = (J*(my_rank + 1))/calk_per_group;
-    size_t w_J = end_J - start_J;
-    
-    double** groop_arr = (double**)calloc(calk_per_tread, sizeof(double*));
-    
-    size_t groop = 0;
-    for(groop = 0; groop < calk_per_tread; groop++){
-        groop_arr[groop] = (double*)calloc(w_J*I, sizeof(double));
-    }
+    size_t start_group_index = (commsize >= 8)? 1: (commsize == 4)? 2: (commsize == 2)? 4: 8;
 
-    size_t i;
-    size_t j;
-    
-    
+    size_t group_i;
 
-    for(i = 0; i < I; i++)
-    {
-        for(j = start_J; j < end_J; j++)
-        {
-            a[i*w_J + j-start_J] = 10*i + j;
-        }
-    }
+    size_t start_J = 
 
-    double start_time = MPI_Wtime();
-    
-    if(calk_per_group == 1){
-        for(i = 0; i < I; i++)
-        {
-            for(j = start_J; j < end_J; j++)
-            {
-                a[i*w_J + j-start_J] = sin(a[i*w_J + j-start_J]);
-            }
-        }    
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    double end_time = MPI_Wtime();
-    free(a);
-
-    if(my_rank == 0)
-        printf("Time: %lf mks\n", (end_time - start_time)*(1000000));//time/(size + 1));
-
+    double** group_mem_arr = calloc(,); 
 
     MPI_Finalize();
 }
