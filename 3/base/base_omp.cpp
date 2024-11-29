@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 
 
     omp_set_num_threads(N_jobs);
-    printf("%lu, %lu, %lu\n", I, J, N_jobs);
+    //printf("%lu, %lu, %lu\n", I, J, N_jobs);
     
 
     double* a = (double*)calloc(J*I, sizeof(double));
@@ -50,19 +50,21 @@ int main(int argc, char* argv[])
         }
     }
 
+    #ifdef TEST
     for(i = 0; i < I; i++)
     {
         for(j = 0; j < J; j++)
         {
-            printf("10*i + j: %d, %d\n", 10*i + j, a[i*J + j]);
+            printf("10*i + j: %d, %lf\n", 10*i + j, a[i*J + j]);
             fflush(stdout);
         }
     }
+    #endif
 
     fflush(stdout);
 
-    time_t start_time = clock();
-
+    double start_time = omp_get_wtime();
+    
     #pragma omp parallel
     {
         int tread = omp_get_thread_num();
@@ -81,22 +83,24 @@ int main(int argc, char* argv[])
         }
     }
 
-    time_t end_time = clock();
+    double end_time = omp_get_wtime();
 
     fflush(stdout);
-
-    for(i = 0; i < I; i++)
-    {
-        for(j = 0; j < J; j++)
+    
+    #ifdef TEST
+        for(i = 0; i < I; i++)
         {
-            printf("%d\n", a[i*J + j]);
+            for(j = 0; j < J; j++)
+            {
+                printf("%lf\n", a[i*J + j]);
+            }
         }
-    }
+    #endif
 
     fflush(stdout);
 
     free(a);
     
-    printf("Time: %f mks\n", ((float)end_time - (float)start_time));//time/(size + 1));
+    printf("Time: %f s\n", ((float)end_time - (float)start_time));//time/(size + 1));
 
 }
