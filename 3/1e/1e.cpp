@@ -25,24 +25,99 @@ int main(int argc, char* argv[])
         J = atoi(argv[2]);
     }
 
-    if((commsize % 8 != 0) & (commsize % 2 != 0))
+    if((commsize <= 8) & (commsize % 2 != 0) & (commsize != 1))
     {
         if(my_rank == 0)
-            printf("Давай, либо степень 2 либо кратно 8 потоков, а то не база\n");
+            printf("Давай, степень 2 и не больше 8 потоков, а то не база\n");
         MPI_Finalize();
         return 0;
     }
 
     size_t tread_per_group = (commsize >= 8)? commsize/8: 1;
     size_t group_per_tread = (commsize >= 8)? 1: (commsize == 4)? 2: (commsize == 2)? 4: 8;
+    size_t n_gr_off_gr     = (commsize >= 8)? 8: commsize;
 
-    size_t start_group_index = (commsize >= 8)? 1: (commsize == 4)? 2: (commsize == 2)? 4: 8;
+    size_t start_group_index = (my_rank % n_gr_off_gr) * group_per_tread;
+    size_t start_gr_of_gr_index = my_rank / 8;
+
+    int primer = (start_gr_of_gr_index == 0);
 
     size_t group_i;
 
-    size_t start_J = 
+    size_t start_J = (J*start_gr_of_gr_index)/tread_per_group;
+    size_t end_J =   (J*(start_gr_of_gr_index + 1))/tread_per_group;
+    size_t w_J = end_J - start_J;
+    size_t real_w_J = w_J/8;
 
-    double** group_mem_arr = calloc(,); 
+    double** group_mem_arr = (double**)calloc(group_per_tread, sizeof(double*)); 
+    if(group_mem_arr == NULL)
+    {
+        printf("с памятью проблемы\n");
+        MPI_Finalize();
+        return 0;
+    }
+    for (group_i = 0; group_i < group_per_tread; group_i++)
+    {
+        group_mem_arr[group_i] = (double*)calloc((primer)? real_w_J*I: (real_w_J + 1)*I, sizeof(double));
+        if(group_mem_arr[group_i] == NULL)
+        {
+            printf("с памятью проблемы\n");
+            MPI_Finalize();
+            return 0;
+        }
+    }
+
+    #ifdef TEST
+        printf("my_rank: %u, s_J: %lu, e_J: %lu, tpg: %lu, gpt: %lu, sgi: %lu, rwj: %lu\n", my_rank, start_J, end_J, tread_per_group, group_per_tread, start_group_index, real_w_J);
+    #endif
+
+    size_t i;
+    size_t j;
+    size_t j_real;
+
+    for(i = 0; i < I; i++)
+    {
+        for(j = start_J; j < end_J; j=j+8)
+        {
+            for(group_i = 0; group_i < group_per_tread; group_i++){
+                j_real = j + start_group_index + group_i;
+                group_mem_arr[group_i][i*real_w_J + j/8] = 10*i + j_real;
+            }
+        }
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    double start_time = MPI_Wtime();
+
+    double* gr_at_pr;
+
+    for(group_i = 0; group_i < group_per_tread; group_i++)
+    {
+        gr_at_pr = group_mem_arr[group_i];
+        #ifdef TEST
+        //printf("r: %u, gi: %lu\n",my_rank ,group_i);
+        #endif
+        for(i = 1; i < I; i++)
+        {
+            for(j = start_J + 8, j_real = 1; j < end_J; j=j+8, j_real++){
+                gr_at_pr[i*real_w_J + j_real] = sin(5*gr_at_pr[(i-1)*real_w_J + j_real - 1]);
+            }
+        }
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    double end_time = MPI_Wtime();
+
+    if(my_rank == 0)
+        printf("Time: %lf mks\n", (end_time - start_time)*(1000000));//time/(size + 1));
+
+    for (group_i = 0; group_i < group_per_tread; group_i++)
+    {
+        free(group_mem_arr[group_i]);
+    }
+    free(group_mem_arr);
 
     MPI_Finalize();
 }
