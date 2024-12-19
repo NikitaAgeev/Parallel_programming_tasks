@@ -48,6 +48,7 @@ int main(int argc, char* argv[])
     size_t end_J =   (J*(start_gr_of_gr_index + 1))/tread_per_group;
     size_t w_J = end_J - start_J;
     size_t real_w_J = w_J/8;
+    real_w_J = (primer)? real_w_J + 1: real_w_J;
 
     double** group_mem_arr = (double**)calloc(group_per_tread, sizeof(double*)); 
     if(group_mem_arr == NULL)
@@ -58,7 +59,7 @@ int main(int argc, char* argv[])
     }
     for (group_i = 0; group_i < group_per_tread; group_i++)
     {
-        group_mem_arr[group_i] = (double*)calloc((primer)? real_w_J*I: (real_w_J + 1)*I, sizeof(double));
+        group_mem_arr[group_i] = (double*)calloc(real_w_J*I, sizeof(double));
         if(group_mem_arr[group_i] == NULL)
         {
             printf("с памятью проблемы\n");
@@ -100,7 +101,7 @@ int main(int argc, char* argv[])
         #endif
         for(i = 1; i < I; i++)
         {
-            for(j = start_J + 8, j_real = 1; j < end_J; j=j+8, j_real++){
+            for(j = start_J + 8 + start_group_index + group_i, j_real = 1; j < end_J; j=j+8, j_real++){
                 gr_at_pr[i*real_w_J + j_real] = sin(5*gr_at_pr[(i-1)*real_w_J + j_real - 1]);
             }
         }
@@ -112,6 +113,27 @@ int main(int argc, char* argv[])
 
     if(my_rank == 0)
         printf("Time: %lf mks\n", (end_time - start_time)*(1000000));//time/(size + 1));
+
+    #ifdef TEST_OUT
+    for (group_i = 0; group_i < group_per_tread; group_i++)
+    {
+        char name_bufer[50];
+        sprintf(name_bufer,"%d.%d.txt", my_rank, group_i);
+        FILE* file = fopen(name_bufer, "w");
+        for(j = start_J + start_group_index + group_i; j < end_J; j=j+8){
+            fprintf(file, "%d\t", j);
+        }
+        fprintf(file, "\n");
+        for(i = 0; i < I; i++)
+        {
+            for(j = start_J + start_group_index + group_i, j_real = 0; j < end_J; j=j+8, j_real++){
+                fprintf(file, "%lf\t", group_mem_arr[group_i][i*real_w_J + j_real]);
+            }
+            fprintf(file, "\n");
+        }
+        fclose(file);
+    }
+    #endif
 
     for (group_i = 0; group_i < group_per_tread; group_i++)
     {

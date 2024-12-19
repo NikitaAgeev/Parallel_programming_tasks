@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
         size_t i;
         size_t j;
 
-        for(i = 0; i < I; i++)
+        for(i = 0; i < I-4; i++)
         {
             for(j = start_J; j < end_J; j++)
             {
@@ -91,6 +91,22 @@ int main(int argc, char* argv[])
     double end_time = omp_get_wtime();
 
     fflush(stdout);
+
+    #ifdef TEST_OUT
+    FILE* file = fopen("out.txt", "w");
+    for(j = 0; j < J; j++){
+        fprintf(file, "%d\t", j);
+    }
+    fprintf(file, "\n");
+    for(i = 0; i < I; i++)
+    {
+        for(j = 0; j < J; j++){
+            fprintf(file, "%lf\t", b[i*J + j]);
+        }
+        fprintf(file, "\n");
+    }
+    fclose(file);
+    #endif
     
     #ifdef TEST
         for(i = 0; i < I; i++)

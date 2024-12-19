@@ -112,6 +112,22 @@ int main(int argc, char* argv[])
         }
     #endif
 
+    #ifdef TEST_OUT
+    FILE* file = fopen("out.txt", "w");
+    for(j = 0; j < J; j++){
+        fprintf(file, "%d\t", j);
+    }
+    fprintf(file, "\n");
+    for(i = 0; i < I; i++)
+    {
+        for(j = 0; j < J; j++){
+            fprintf(file, "%lf\t", b[i*J + j]);
+        }
+        fprintf(file, "\n");
+    }
+    fclose(file);
+    #endif
+
     fflush(stdout);
 
     free(a);
